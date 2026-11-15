@@ -3,28 +3,9 @@
 const VIDEO_EXT = /\.(mp4|m4v|webm|mkv|mov|ogv|ogg|avi|3gp|ts|mts|m2ts|mpe?g|wmv|flv|mp3|m4a|aac|wav|flac|opus|oga)$/i;
 const SUB_EXT = /\.(srt|vtt|ass|ssa)$/i;
 
-const PLAYER_JS = 'assets/vendor/movi/movi-player.js?v=0.4.1';
-
 const $ = (s) => document.querySelector(s);
-const player = $('#player'); // <movi-player>, defined once PLAYER_JS has loaded
-
-// a few MB: fetched after the page has loaded, or right away if a video is opened first
-let playerRequested = false;
-function loadPlayer() {
-  if (playerRequested) return;
-  playerRequested = true;
-  const s = document.createElement('script');
-  s.type = 'module';
-  s.src = PLAYER_JS;
-  s.onerror = () => {
-    playerRequested = false;
-    $('#loading').classList.remove('visible');
-    toast('The player could not load. Check your connection.');
-  };
-  document.head.append(s);
-}
-if (document.readyState === 'complete') loadPlayer();
-else addEventListener('load', loadPlayer);
+// <movi-player>: preloaded in <head>, defined by the module script after this one in index.html
+const player = $('#player');
 
 const state = {
   list: [],
@@ -104,7 +85,6 @@ async function play(i) {
   const undo = preparing(ready ? 'Opening your video' : 'Loading the player');
   // no await when ready: play() must stay inside the click, or the browser blocks autoplay
   if (!ready) {
-    loadPlayer();
     await customElements.whenDefined('movi-player');
     if (current() !== item) return undo();
   }

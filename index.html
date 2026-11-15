@@ -21,6 +21,8 @@
 <meta name="twitter:card" content="summary_large_image">
 
 <link rel="stylesheet" href="assets/css/style.min.css?v=1.0.1">
+<!-- start the player download right away without running it; the module at the end of body uses the same URL -->
+<link rel="modulepreload" href="assets/vendor/movi/movi-player.js?v=0.4.1" fetchpriority="high">
 
 <script type="application/ld+json">
 {
@@ -182,6 +184,7 @@
 <div class="drop" id="drop" aria-hidden="true"><span>Drop to play</span></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="assets/js/app.min.js?v=1.0.4" defer></script>
+<script src="assets/js/app.min.js?v=1.0.5" defer></script>
+<script type="module" src="assets/vendor/movi/movi-player.js?v=0.4.1"></script>
 </body>
 </html>
