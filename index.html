@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free Online Video Player - Play MP4, MKV and More | Simple Player</title>
+<meta name="description" content="Free online video player. Play MP4, MKV, WebM and MOV files or a video URL in your browser. Subtitles, playlists and 300% volume boost. Nothing is uploaded.">
+<link rel="canonical" href="https://simpleplayer.org/">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="/assets/img/favicon.svg?v=1.0.0" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png?v=1.0.0">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Simple Player">
+<meta property="og:url" content="https://simpleplayer.org/">
+<meta property="og:title" content="Free Online Video Player - Simple Player">
+<meta property="og:description" content="Play MP4, MKV, WebM and MOV files in your browser. Subtitles, playlists and volume boost. Your files never leave your device.">
+<meta property="og:image" content="https://simpleplayer.org/assets/img/og.png?v=1.0.0">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="stylesheet" href="assets/css/style.min.css?v=1.0.0">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "Simple Player",
+      "url": "https://simpleplayer.org/",
+      "applicationCategory": "MultimediaApplication",
+      "operatingSystem": "Windows, macOS, Linux, Android, iOS",
+      "browserRequirements": "Requires a modern web browser",
+      "description": "Free online video player that plays local video files and video URLs in the browser without uploading them. Supports SRT and VTT subtitles, playlists, volume boost up to 300% and HLS streams.",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "Is Simple Player free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. It is free, with no account and nothing to install." } },
+        { "@type": "Question", "name": "Are my videos uploaded?", "acceptedAnswer": { "@type": "Answer", "text": "No. Your browser opens the file and plays it on your device. Nothing is sent to a server." } },
+        { "@type": "Question", "name": "How do I play an MKV file online?", "acceptedAnswer": { "@type": "Answer", "text": "Click Open video and pick the MKV file, or drop it on the page. Most MKV files play right away. If there is no sound or picture, for example with HEVC, AC3 or DTS, click Try the Pro engine." } },
+        { "@type": "Question", "name": "Can I play a video from a URL?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Paste a direct link to an MP4, WebM or M3U8 (HLS) video and press Play." } },
+        { "@type": "Question", "name": "Why won't my video play?", "acceptedAnswer": { "@type": "Answer", "text": "The file uses a codec your browser can't decode, such as HEVC, AC3 or DTS. Click Play with Pro engine. It decodes the file in your browser, still without uploading anything." } },
+        { "@type": "Question", "name": "How do I add subtitles to a video?", "acceptedAnswer": { "@type": "Answer", "text": "Click Subtitles and choose an SRT or VTT file, or drop it on the page. Subtitles with the same name as the video load automatically." } },
+        { "@type": "Question", "name": "Can I make a quiet video louder?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Drag the volume slider past 100%, like in VLC, up to 300%. You can also press the Up arrow key." } },
+        { "@type": "Question", "name": "Does it work on my phone?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. It works in modern browsers on Windows, Mac, Linux, Android and iPhone." } }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<header class="top wrap">
+  <a class="logo" href="/" aria-label="Simple Player home">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="currentColor"/><path d="M12.5 10.2v11.6c0 .9 1 1.4 1.7.9l9-5.8c.7-.4.7-1.4 0-1.8l-9-5.8c-.7-.5-1.7 0-1.7.9z" fill="#fff"/></svg>
+    <span>simple<b>player</b></span>
+  </a>
+  <nav aria-label="Main">
+    <a href="#features">Features</a>
+    <a href="#formats">Formats</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <h1>Free Online <span>Video Player</span></h1>
+    <p class="lead">Play MP4, MKV, WebM and MOV files right in your browser. No install, no upload, no sign-up.</p>
+
+    <div class="player">
+      <div class="stage" id="stage">
+        <div class="empty" id="empty">
+          <button class="open" id="openBtn" type="button">
+            <span class="disc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13c0 .8.9 1.3 1.6.8l10-6.5c.6-.4.6-1.2 0-1.6l-10-6.5C8.9 4.2 8 4.7 8 5.5z"/></svg></span>
+            Open video
+          </button>
+          <p class="hint">or drop files here, or <button type="button" class="textbtn" id="folderBtn">open a folder</button></p>
+          <form class="url" id="urlForm">
+            <input type="url" id="urlInput" placeholder="Paste a video URL (MP4, WebM, M3U8)" aria-label="Video URL" required>
+            <button type="submit">Play</button>
+          </form>
+        </div>
+        <div class="video" id="videoWrap" hidden>
+          <video id="video" playsinline></video>
+        </div>
+        <div class="msg" id="msg" role="alert" hidden></div>
+      </div>
+
+      <div class="bar" id="bar" hidden>
+        <p class="now" id="now"></p>
+        <button type="button" class="pro-link" id="proBtn" hidden>No sound or picture? Try the Pro engine</button>
+      </div>
+
+      <ol class="playlist" id="playlist" hidden></ol>
+    </div>
+
+    <p class="private">Your videos stay on your device. Nothing is uploaded.</p>
+
+    <input type="file" id="fileInput" accept="video/*,audio/*,.mkv,.mov,.avi,.ts,.srt,.vtt" multiple hidden>
+    <input type="file" id="folderInput" webkitdirectory multiple hidden>
+    <input type="file" id="subInput" accept=".srt,.vtt" multiple hidden>
+  </section>
+
+  <section class="wrap" aria-labelledby="how">
+    <h2 id="how">How to play a video online</h2>
+    <ol class="steps">
+      <li><b>Open your video</b><span>Pick a file, a few files or a whole folder. Or paste a video URL.</span></li>
+      <li><b>Add subtitles</b><span>Optional. Drop an SRT or VTT file on the page.</span></li>
+      <li><b>Watch</b><span>It plays instantly in your browser, right on your device.</span></li>
+    </ol>
+  </section>
+
+  <section class="wrap" id="features" aria-labelledby="feat">
+    <h2 id="feat">A simple video player with everything you need</h2>
+    <ul class="grid">
+      <li><h3>Private by design</h3><p>Videos play locally. No upload, no account, no waiting.</p></li>
+      <li><h3>Subtitles</h3><p>Load SRT or VTT files. Matching subtitles load on their own.</p></li>
+      <li><h3>Volume boost</h3><p>Quiet video? Turn the volume up to 300%, just like VLC.</p></li>
+      <li><h3>Playlists</h3><p>Open many files or a folder. The next video plays automatically.</p></li>
+      <li><h3>Resume playback</h3><p>Come back later and pick up where you stopped.</p></li>
+      <li><h3>Playback speed</h3><p>Watch from 0.25x to 3x speed.</p></li>
+      <li><h3>Pro engine</h3><p>MKV with HEVC, AC3 or DTS? A built-in decoder plays it, still on your device.</p></li>
+      <li><h3>Play from URL</h3><p>Paste an MP4, WebM or HLS (M3U8) link and press Play.</p></li>
+    </ul>
+  </section>
+
+  <section class="wrap" id="formats" aria-labelledby="fmt">
+    <h2 id="fmt">Supported video formats</h2>
+    <p class="sub">Simple Player uses your browser's built-in decoder, so it is fast and needs no VLC or codec pack. For the rest, there is the Pro engine.</p>
+    <dl class="formats">
+      <div><dt>Video</dt><dd>MP4, MKV, WebM, MOV, M4V, OGV, HLS (M3U8)</dd></div>
+      <div><dt>Codecs</dt><dd>H.264, VP8, VP9, AV1, HEVC (H.265) *</dd></div>
+      <div><dt>Audio</dt><dd>MP3, AAC, M4A, FLAC, WAV, OGG, Opus, AC3 *, DTS *</dd></div>
+      <div><dt>Subtitles</dt><dd>SRT, VTT</dd></div>
+    </dl>
+    <p class="note">* Plays with the built-in Pro engine when your browser can't decode it. The engine is a one-time 3.5 MB download.</p>
+  </section>
+
+  <section class="wrap" aria-labelledby="keys">
+    <h2 id="keys">Keyboard shortcuts</h2>
+    <ul class="keys">
+      <li><kbd>Space</kbd> Play / pause</li>
+      <li><kbd>Left</kbd><kbd>Right</kbd> Seek 5 seconds</li>
+      <li><kbd>Up</kbd><kbd>Down</kbd> Volume, up to 300%</li>
+      <li><kbd>F</kbd> Fullscreen</li>
+      <li><kbd>M</kbd> Mute</li>
+      <li><kbd>C</kbd> Subtitles on / off</li>
+      <li><kbd>S</kbd> Screenshot</li>
+      <li><kbd>L</kbd> Loop</li>
+      <li><kbd>N</kbd><kbd>P</kbd> Next / previous</li>
+      <li><kbd>0</kbd><kbd>9</kbd> Jump to 0% - 90%</li>
+      <li><kbd>O</kbd> Open files</li>
+    </ul>
+  </section>
+
+  <section class="wrap" id="faq" aria-labelledby="faqh">
+    <h2 id="faqh">Frequently asked questions</h2>
+    <div class="faq">
+      <details><summary>Is Simple Player free?</summary><p>Yes. It is free, with no account and nothing to install.</p></details>
+      <details><summary>Are my videos uploaded?</summary><p>No. Your browser opens the file and plays it on your device. Nothing is sent to a server.</p></details>
+      <details><summary>How do I play an MKV file online?</summary><p>Click Open video and pick the MKV file, or drop it on the page. Most MKV files play right away. If there is no sound or picture, for example with HEVC, AC3 or DTS, click Try the Pro engine.</p></details>
+      <details><summary>Can I play a video from a URL?</summary><p>Yes. Paste a direct link to an MP4, WebM or M3U8 (HLS) video and press Play.</p></details>
+      <details><summary>Why won't my video play?</summary><p>The file uses a codec your browser can't decode, such as HEVC, AC3 or DTS. Click Play with Pro engine. It decodes the file in your browser, still without uploading anything.</p></details>
+      <details><summary>How do I add subtitles to a video?</summary><p>Click Subtitles and choose an SRT or VTT file, or drop it on the page. Subtitles with the same name as the video load automatically.</p></details>
+      <details><summary>Can I make a quiet video louder?</summary><p>Yes. Drag the volume slider past 100%, like in VLC, up to 300%. You can also press the Up arrow key.</p></details>
+      <details><summary>Does it work on my phone?</summary><p>Yes. It works in modern browsers on Windows, Mac, Linux, Android and iPhone.</p></details>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot wrap">
+  <a class="logo" href="/" aria-label="Simple Player home">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="currentColor"/><path d="M12.5 10.2v11.6c0 .9 1 1.4 1.7.9l9-5.8c.7-.4.7-1.4 0-1.8l-9-5.8c-.7-.5-1.7 0-1.7.9z" fill="#fff"/></svg>
+    <span>simple<b>player</b></span>
+  </a>
+  <p>Free online video player for people who just want to watch.</p>
+  <p class="copy">2026 simpleplayer.org</p>
+</footer>
+
+<div class="drop" id="drop" aria-hidden="true"><span>Drop to play</span></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="assets/js/app.min.js?v=1.0.1" defer></script>
+</body>
+</html>
