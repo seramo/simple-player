@@ -80,9 +80,13 @@ async function play(i) {
   render();
 
   // the player bundle may still be downloading if the file was picked right away
-  const undo = preparing(customElements.get('movi-player') ? 'Opening your video' : 'Loading the player');
-  await customElements.whenDefined('movi-player');
-  if (current() !== item) return undo();
+  const ready = !!customElements.get('movi-player');
+  const undo = preparing(ready ? 'Opening your video' : 'Loading the player');
+  // no await when ready: play() must stay inside the click, or the browser blocks autoplay
+  if (!ready) {
+    await customElements.whenDefined('movi-player');
+    if (current() !== item) return undo();
+  }
 
   if (item.file) player.setFile ? player.setFile(item.file) : (player.src = item.file);
   else player.src = item.url;
