@@ -9,15 +9,14 @@ https://simpleplayer.org
 - Play MP4, MKV, WebM and MOV files
 - Drop a file on the page, or open a whole folder
 - Play a video from a link (MP4, WebM or M3U8)
-- Add SRT or VTT subtitles
-- Volume boost up to 300%
-- Pro engine for files with no sound or picture (HEVC, AC3, DTS)
+- Plays HEVC, AC3 and DTS too
+- Add SRT, VTT or ASS subtitles
 
 Your videos stay on your device. Nothing is uploaded.
 
 ## Run locally
 
-Open `index.html` in a browser, or serve the folder:
+Serve the folder, then open http://localhost:8000:
 
 ```
 python3 -m http.server

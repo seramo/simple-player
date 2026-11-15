@@ -3,18 +3,18 @@
    ========================================================================== */
 
 :root {
-  --bg: #FFFFFF;
-  --soft: #F6F6F7;
+  --bg: #ffffff;
+  --soft: #f6f6f7;
   --ink: #111113;
-  --muted: #6B6F78;
-  --line: #E8E8EB;
+  --muted: #6b6f78;
+  --line: #e8e8eb;
   /* VLC-like orange, deep enough for white bold text on it */
-  --accent: #F06A00;
-  --accent-hover: #D95F00;
+  --accent: #f06a00;
+  --accent-hover: #d95f00;
   --dark: #131417;
-  --dark-2: #1D1F24;
-  --dark-line: #2B2E35;
-  --dark-muted: #9A9DA6;
+  --dark-2: #1d1f24;
+  --dark-line: #2b2e35;
+  --dark-muted: #9a9da6;
   --radius: 20px;
   --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
@@ -200,15 +200,50 @@ h2 {
   background: var(--dark);
 }
 
-.stage:has(.video:not([hidden])),
-.stage.pro-on {
+.stage.on {
   background: #000;
 }
 
-.pro {
+movi-player {
   display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+}
+
+.stage:not(.on) movi-player,
+.stage.on .empty {
+  display: none;
+}
+
+/* "Preparing" sweep, shown while the player bundle or the file loads */
+.loading {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: none;
+  place-items: center;
+  overflow: hidden;
+  color: var(--dark-muted);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.loading.visible {
+  display: grid;
+}
+
+.loading::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .1) 50%, transparent 65%) 0 0 / 200% 100%;
+  animation: sweep 1.6s linear infinite;
+}
+
+@keyframes sweep {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
 }
 
 .empty {
@@ -327,7 +362,7 @@ h2 {
   justify-content: center;
   padding: 24px;
   background: rgba(19, 20, 23, .94);
-  color: #E4E4E8;
+  color: #e4e4e8;
   text-align: center;
 }
 
@@ -343,117 +378,11 @@ h2 {
   font-size: 1.125rem;
 }
 
-.msg small {
-  display: block;
-  margin-top: 10px;
-  color: var(--dark-muted);
-  font-size: .8125rem;
-}
-
-.pro-btn {
-  display: block;
-  margin: 20px auto 0;
-  padding: 12px 22px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 700;
-}
-
-.pro-btn:hover {
-  background: var(--accent-hover);
-}
 
 .private {
   margin: 18px 0 0;
   color: var(--muted);
   font-size: .9375rem;
-}
-
-/* ==========================================================================
-   Plyr theme and custom controls
-   ========================================================================== */
-
-.plyr {
-  --plyr-color-main: var(--accent);
-  --plyr-font-family: var(--font);
-  --plyr-captions-text-color: #fff;
-  border-radius: var(--radius);
-}
-
-.video {
-  background: #000;
-}
-
-.plyr video {
-  object-fit: contain;
-}
-
-.plyr__captions {
-  font-size: clamp(15px, 2.4vw, 26px);
-}
-
-.plyr__control svg {
-  pointer-events: none;
-}
-
-.video:not(.multi) .sp-prev,
-.video:not(.multi) .sp-next {
-  display: none;
-}
-
-.video.looping .sp-loop {
-  color: var(--accent);
-}
-
-.sp-vol {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  margin: 0 6px 0 2px;
-}
-
-.sp-tri {
-  width: 64px;
-  height: 18px;
-  clip-path: polygon(0 100%, 100% 0, 100% 100%);
-  /* VLC's default slider colours: green up to 100%, then yellow and red */
-  background:
-    linear-gradient(90deg, transparent var(--p, 33%), rgba(255, 255, 255, .28) var(--p, 33%)),
-    linear-gradient(90deg, rgb(153, 210, 153), rgb(20, 210, 20) 33.3%, rgb(255, 199, 15) 66.6%, rgb(245, 39, 29));
-}
-
-.sp-vol.muted .sp-tri {
-  opacity: .35;
-}
-
-/* specific enough to beat Plyr's own range styles */
-.plyr__volume .sp-vol input[type="range"] {
-  position: absolute;
-  z-index: 3;
-  top: 0;
-  left: 0;
-  width: 64px;
-  height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.sp-vol:has(input:focus-visible) {
-  border-radius: 4px;
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.sp-vol output {
-  min-width: 3.2em;
-  color: #fff;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
 }
 
 /* ==========================================================================
@@ -477,25 +406,6 @@ h2 {
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.pro-link {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--muted);
-  font-size: .875rem;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.pro-link:hover,
-.pro-link.nudge {
-  color: var(--accent);
-}
-
-.pro-link.nudge {
-  font-weight: 700;
 }
 
 .playlist {
@@ -561,11 +471,6 @@ main > .wrap + .wrap {
   color: var(--muted);
 }
 
-.note {
-  margin: 14px 0 0;
-  color: var(--muted);
-  font-size: .875rem;
-}
 
 .steps {
   display: grid;
@@ -836,28 +741,15 @@ body.dragging .drop {
   .foot .copy {
     margin-left: 0;
   }
-
-  /* phone control bar: keep play, progress, volume, captions, settings, fullscreen */
-  .plyr .sp-prev,
-  .plyr .sp-next,
-  .plyr .sp-open,
-  .plyr .sp-sub,
-  .plyr .sp-shot,
-  .plyr .sp-loop,
-  .plyr [data-plyr="pip"],
-  .sp-vol output {
-    display: none !important;
-  }
-
-  .sp-tri,
-  .plyr__volume .sp-vol input[type="range"] {
-    width: 48px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto !important;
     transition: none !important;
+  }
+
+  .loading::after {
+    animation: none;
   }
 }
