@@ -10,6 +10,8 @@ const player = $('#player');
 const state = {
   list: [],
   index: -1,
+  shuffle: false,
+  repeat: 'off', // off | all | one
 };
 
 const current = () => state.list[state.index];
@@ -17,6 +19,9 @@ const current = () => state.list[state.index];
 // ---------- helpers ----------
 
 const baseName = (name) => name.replace(/\.[^.]+$/, '').toLowerCase();
+const pathOf = (f) => f.webkitRelativePath || f.name;
+const clock = (s) => new Date(s * 1000).toISOString().slice(s >= 3600 ? 11 : 14, 19);
+const quality = (h) => (h >= 2160 ? '4K' : h ? Math.min(h, 1440) + 'p' : '');
 const isTyping = (el) => el.closest?.('input, textarea, select');
 
 let toastTimer;
@@ -31,7 +36,9 @@ function toast(text) {
 // ---------- sources ----------
 
 function setList(items) {
+  state.list.forEach((it) => it.thumb && URL.revokeObjectURL(it.thumb));
   state.list = items;
+  buildPlaylist();
   // the player draws Next / Previous and owns Shift+N / Shift+P; we load each item ourselves.
   // Waits for the element: a property set before it upgrades would hide its setter.
   customElements.whenDefined('movi-player').then(() => {
@@ -45,7 +52,7 @@ function openFiles(files) {
   const subs = files.filter((f) => SUB_EXT.test(f.name));
   const videos = files
     .filter((f) => !SUB_EXT.test(f.name) && (VIDEO_EXT.test(f.name) || /^(video|audio)\//.test(f.type)))
-    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    .sort((a, b) => pathOf(a).localeCompare(pathOf(b), undefined, { numeric: true }));
 
   if (!videos.length) {
     if (subs.length && current()) subs.forEach(addSub);
@@ -55,6 +62,8 @@ function openFiles(files) {
 
   const items = videos.map((f) => ({
     name: f.name,
+    // subfolder inside the opened folder, for the group headings
+    dir: pathOf(f).split('/').slice(1, -1).join(' / '),
     file: f,
     subs: subs.filter((s) => baseName(s.name).startsWith(baseName(f.name))),
   }));
@@ -78,7 +87,7 @@ async function play(i) {
   state.index = i;
   $('#msg').hidden = true;
   $('#stage').classList.add('on');
-  render();
+  showCurrent();
 
   // the player bundle may still be downloading if the file was picked right away
   const ready = !!customElements.get('movi-player');
@@ -91,6 +100,7 @@ async function play(i) {
 
   if (item.file) player.setFile ? player.setFile(item.file) : (player.src = item.file);
   else player.src = item.url;
+  player.loop = state.repeat === 'one';
   // after the source: a src the element didn't write itself resets the index
   if (state.list.length > 1) player.playlistIndex = i;
   item.subs.forEach((f) => player.addSubtitleFile(f));
@@ -131,28 +141,158 @@ function addSub(file) {
 
 // ---------- playlist ----------
 
-function render() {
+function showCurrent() {
   const { list, index } = state;
   const item = current();
   $('#now').textContent = list.length > 1 ? `${index + 1}/${list.length} - ${item.name}` : item.name;
   document.title = item.name + ' - Simple Player';
   $('#bar').hidden = false;
 
-  const playlist = $('#playlist');
-  playlist.hidden = list.length < 2;
-  playlist.replaceChildren(...list.map((it, i) => {
-    const li = document.createElement('li');
-    const b = document.createElement('button');
-    const span = document.createElement('span');
-    li.className = i === index ? 'on' : '';
-    b.type = 'button';
-    b.onclick = () => play(i);
-    span.textContent = it.name;
-    b.append(span);
-    li.append(b);
-    return li;
-  }));
+  const on = $('#playlist .on');
+  on?.classList.remove('on');
+  const li = $(`#playlist li[data-i="${index}"]`);
+  if (!li) return;
+  li.classList.add('on');
+  // scroll inside the list only, never the page
+  const box = $('#playlist');
+  const top = li.offsetTop - box.offsetTop;
+  if (top < box.scrollTop || top + li.offsetHeight > box.scrollTop + box.clientHeight) {
+    box.scrollTo({ top: top - box.clientHeight / 2 + li.offsetHeight / 2, behavior: 'smooth' });
+  }
 }
+
+function buildPlaylist() {
+  const { list } = state;
+  $('#plist').hidden = list.length < 2;
+  if (list.length < 2) return;
+
+  const path = list[0].file?.webkitRelativePath || '';
+  $('#plistTitle').textContent = path.includes('/') ? path.split('/')[0] : 'Playlist';
+  $('#plistCount').textContent = list.length;
+  $('#plistSearch').value = '';
+
+  const rows = [];
+  let dir = '';
+  list.forEach((it, i) => {
+    if (it.dir && it.dir !== dir) {
+      const h = document.createElement('li');
+      h.className = 'group';
+      h.textContent = it.dir;
+      rows.push(h);
+    }
+    dir = it.dir;
+    const li = document.createElement('li');
+    li.dataset.i = i;
+    li.innerHTML = `<button type="button"><span class="thumb"><img alt="" hidden><span class="n">${i + 1}</span><span class="dur"></span></span>
+      <span class="info"><span class="name"></span><span class="meta"></span></span></button>`;
+    li.querySelector('.name').textContent = it.name.replace(/\.[^.]+$/, '');
+    li.querySelector('button').onclick = () => play(i);
+    rows.push(li);
+  });
+  $('#playlist').replaceChildren(...rows);
+  makeThumbs(list);
+}
+
+function drawMeta(i) {
+  const it = state.list[i];
+  const li = $(`#playlist li[data-i="${i}"]`);
+  if (!li || state.list !== it.list) return;
+  if (it.duration) li.querySelector('.dur').textContent = clock(Math.round(it.duration));
+  li.querySelector('.meta').textContent = [quality(it.height), it.file.name.split('.').pop().toUpperCase()].filter(Boolean).join(' · ');
+  if (it.thumb) {
+    const img = li.querySelector('img');
+    img.src = it.thumb;
+    img.hidden = false;
+  }
+}
+
+// thumbnails and duration, one file at a time, with the player's own decoder (so MKV and HEVC work too)
+let thumbWasm;
+async function makeThumbs(list) {
+  let Movi;
+  try {
+    Movi = await import($('script[type="module"]').src);
+    thumbWasm ??= Movi.loadWasmModuleNew();
+    await thumbWasm;
+  } catch { return; }
+  for (const [i, it] of list.entries()) {
+    if (state.list !== list) return; // a new list was opened
+    it.list = list;
+    try { await thumbOf(Movi, it); } catch {}
+    drawMeta(i);
+  }
+}
+
+async function thumbOf(Movi, it) {
+  const b = new Movi.ThumbnailBindings(await thumbWasm);
+  try {
+    b.setDataSource(new Movi.FileSource(it.file));
+    await b.create(it.file.size);
+    if (!(await b.open())) return;
+    const { width: w, height: h, duration } = b.getStreamInfo() || {};
+    Object.assign(it, { duration, height: h });
+    // shortcut: rotated (portrait phone) videos get a sideways thumbnail, read the track rotation if users notice
+    if (!w || !h || !duration || !((await b.readKeyframe(duration * 0.1)) > 0)) return;
+    const rgba = b.decodeCurrentPacket(w, h);
+    if (!rgba) return;
+    const full = document.createElement('canvas');
+    full.width = w;
+    full.height = h;
+    full.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(rgba.buffer, rgba.byteOffset, rgba.byteLength), w, h), 0, 0);
+    const out = document.createElement('canvas');
+    out.width = 320;
+    out.height = 180;
+    const s = Math.min(320 / w, 180 / h);
+    out.getContext('2d').drawImage(full, (320 - w * s) / 2, (180 - h * s) / 2, w * s, h * s);
+    const blob = await new Promise((r) => out.toBlob(r, 'image/jpeg', 0.75));
+    if (blob) it.thumb = URL.createObjectURL(blob);
+  } finally {
+    b.destroy?.();
+  }
+}
+
+// next or previous item, following shuffle and repeat; -1 when there is none
+function step(dir) {
+  const n = state.list.length;
+  if (state.shuffle && dir > 0 && n > 1) {
+    let i;
+    do i = Math.floor(Math.random() * n); while (i === state.index);
+    return i;
+  }
+  const i = state.index + dir;
+  if (i >= 0 && i < n) return i;
+  return state.repeat === 'all' ? (i + n) % n : -1;
+}
+
+function setRepeat(mode) {
+  state.repeat = mode;
+  // only once defined: a property set before the element upgrades would hide its setter
+  if (customElements.get('movi-player')) player.loop = mode === 'one';
+  const b = $('#repeatBtn');
+  b.dataset.mode = mode;
+  b.setAttribute('aria-pressed', mode !== 'off');
+  b.title = { off: 'Repeat: off', all: 'Repeat: all', one: 'Repeat: this video' }[mode];
+}
+
+$('#shuffleBtn').onclick = (e) => {
+  state.shuffle = !state.shuffle;
+  e.currentTarget.setAttribute('aria-pressed', state.shuffle);
+};
+$('#repeatBtn').onclick = () => setRepeat({ off: 'all', all: 'one', one: 'off' }[state.repeat]);
+
+$('#plistToggle').onclick = (e) => {
+  const open = $('#plistBody').hidden;
+  $('#plistBody').hidden = !open;
+  e.currentTarget.setAttribute('aria-expanded', open);
+  e.currentTarget.title = open ? 'Hide list' : 'Show list';
+};
+
+$('#plistSearch').oninput = (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  for (const li of $('#playlist').children) {
+    li.hidden = q ? li.classList.contains('group') || !state.list[li.dataset.i].name.toLowerCase().includes(q) : false;
+  }
+};
 
 // ---------- player events ----------
 
@@ -166,14 +306,22 @@ customElements.whenDefined('movi-player').then(() => {
   });
 });
 
-// Next / Previous in the bar: the player only asks, we load the item
+// Next / Previous in the bar: the player only asks, we pick the item (shuffle, repeat) and load it
 player.addEventListener('itemchange', (e) => {
   e.preventDefault();
-  play(e.detail.index);
+  const i = step(e.detail.index < state.index ? -1 : 1);
+  if (i >= 0) play(i);
 });
 
 player.addEventListener('ended', () => {
-  if (!player.loop && state.index < state.list.length - 1) play(state.index + 1);
+  if (!$('#autoplay').checked) return;
+  const i = step(1);
+  if (i >= 0) play(i);
+});
+
+// L on the player toggles its loop: keep the repeat button in step
+player.addEventListener('loopchange', () => {
+  if (player.loop !== (state.repeat === 'one')) setRepeat(player.loop ? 'one' : 'off');
 });
 
 player.addEventListener('error', () => { if (current()) showError(); });
@@ -211,7 +359,12 @@ addEventListener('drop', async (e) => {
 async function readEntries(entries) {
   const out = [];
   const walk = async (entry) => {
-    if (entry.isFile) return out.push(await new Promise((res, rej) => entry.file(res, rej)));
+    if (entry.isFile) {
+      const f = await new Promise((res, rej) => entry.file(res, rej));
+      // keep the folder path, like a folder picked with the button
+      try { Object.defineProperty(f, 'webkitRelativePath', { value: entry.fullPath.slice(1) }); } catch {}
+      return out.push(f);
+    }
     const reader = entry.createReader();
     for (let batch; (batch = await new Promise((res, rej) => reader.readEntries(res, rej))).length;) {
       for (const child of batch) await walk(child);

@@ -7,7 +7,7 @@ https://simpleplayer.org
 ## Features
 
 - Play MP4, MKV, WebM and MOV files
-- Drop a file on the page, or open a whole folder
+- Drop a file on the page, or open a whole folder as a playlist with thumbnails, search, shuffle and repeat
 - Play a video from a link (MP4, WebM or M3U8)
 - Plays HEVC, AC3 and DTS too
 - Add SRT, VTT or ASS subtitles

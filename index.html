@@ -20,7 +20,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 
-<link rel="stylesheet" href="assets/css/style.min.css?v=1.0.1">
+<link rel="stylesheet" href="assets/css/style.min.css?v=1.0.2">
 <!-- start the player download right away without running it; the module at the end of body uses the same URL -->
 <link rel="modulepreload" href="assets/vendor/movi/movi-player.js?v=0.4.2" fetchpriority="high">
 
@@ -96,7 +96,25 @@
         <p class="now" id="now"></p>
       </div>
 
-      <ol class="playlist" id="playlist" hidden></ol>
+      <section class="plist" id="plist" aria-label="Playlist" hidden>
+        <div class="plist-head">
+          <p class="plist-title"><b id="plistTitle">Playlist</b><span class="count" id="plistCount"></span></p>
+          <button type="button" class="hbtn" id="shuffleBtn" title="Shuffle" aria-label="Shuffle" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5l-1.8-1.8-4.3 4.3-1.4-1.4 4.3-4.3zM4 5.4 5.4 4l14.8 14.8L22 17v5h-5l1.8-1.8zM9.4 13.2l1.4 1.4-5.4 5.4L4 18.6z"/></svg>
+          </button>
+          <button type="button" class="hbtn" id="repeatBtn" title="Repeat: off" aria-label="Repeat" aria-pressed="false" data-mode="off">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2z"/></svg><i>1</i>
+          </button>
+          <button type="button" class="hbtn" id="plistToggle" title="Hide list" aria-label="Show or hide the list" aria-expanded="true" aria-controls="plistBody">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.4 15.4 12 10.8l4.6 4.6L18 14l-6-6-6 6z"/></svg>
+          </button>
+        </div>
+        <div id="plistBody">
+          <input type="search" class="plist-search" id="plistSearch" placeholder="Search files..." aria-label="Search the playlist" autocomplete="off" spellcheck="false">
+          <ol class="playlist" id="playlist"></ol>
+          <label class="autoplay"><input type="checkbox" id="autoplay" checked> Autoplay next</label>
+        </div>
+      </section>
     </div>
 
     <p class="private">Your videos stay on your device. Nothing is uploaded.</p>
@@ -120,7 +138,7 @@
       <li><h3>Private by design</h3><p>Videos play locally. No upload, no account, no waiting.</p></li>
       <li><h3>Subtitles</h3><p>Load SRT or VTT files. Matching subtitles load on their own.</p></li>
       <li><h3>Stable volume</h3><p>Quiet talk and loud scenes play at an even level.</p></li>
-      <li><h3>Playlists</h3><p>Open many files or a folder. The next video plays automatically.</p></li>
+      <li><h3>Playlists</h3><p>Open a folder and get a list with thumbnails, search, shuffle and repeat.</p></li>
       <li><h3>Resume playback</h3><p>Come back later and pick up where you stopped.</p></li>
       <li><h3>Playback speed</h3><p>Watch from 0.25x to 3x speed.</p></li>
       <li><h3>Plays almost anything</h3><p>MKV with HEVC, AC3 or DTS plays too, still on your device.</p></li>
@@ -184,7 +202,7 @@
 <div class="drop" id="drop" aria-hidden="true"><span>Drop to play</span></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="assets/js/app.min.js?v=1.0.5" defer></script>
+<script src="assets/js/app.min.js?v=1.0.6" defer></script>
 <script type="module" src="assets/vendor/movi/movi-player.js?v=0.4.2"></script>
 </body>
 </html>
