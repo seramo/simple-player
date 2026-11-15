@@ -20,6 +20,20 @@ const current = () => state.list[state.index];
 
 const baseName = (name) => name.replace(/\.[^.]+$/, '').toLowerCase();
 const pathOf = (f) => f.webkitRelativePath || f.name;
+const natural = (a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+// folders first at every depth, then files, like a file explorer; playback follows the same order
+function treeOrder(a, b) {
+  const pa = pathOf(a).split('/');
+  const pb = pathOf(b).split('/');
+  for (let i = 0; ; i++) {
+    if (i >= pa.length || i >= pb.length) return pa.length - pb.length;
+    const dirA = i < pa.length - 1;
+    const dirB = i < pb.length - 1;
+    if (dirA !== dirB) return dirA ? -1 : 1;
+    const c = natural(pa[i], pb[i]);
+    if (c) return c;
+  }
+}
 const clock = (s) => new Date(s * 1000).toISOString().slice(s >= 3600 ? 11 : 14, 19);
 const quality = (h) => (h >= 2160 ? '4K' : h ? Math.min(h, 1440) + 'p' : '');
 const isTyping = (el) => el.closest?.('input, textarea, select');
@@ -52,7 +66,7 @@ function openFiles(files) {
   const subs = files.filter((f) => SUB_EXT.test(f.name));
   const videos = files
     .filter((f) => !SUB_EXT.test(f.name) && (VIDEO_EXT.test(f.name) || /^(video|audio)\//.test(f.type)))
-    .sort((a, b) => pathOf(a).localeCompare(pathOf(b), undefined, { numeric: true }));
+    .sort(treeOrder);
 
   if (!videos.length) {
     if (subs.length && current()) subs.forEach(addSub);
@@ -62,8 +76,6 @@ function openFiles(files) {
 
   const items = videos.map((f) => ({
     name: f.name,
-    // subfolder inside the opened folder, for the group headings
-    dir: pathOf(f).split('/').slice(1, -1).join(' / '),
     file: f,
     subs: subs.filter((s) => baseName(s.name).startsWith(baseName(f.name))),
   }));
@@ -153,9 +165,13 @@ function showCurrent() {
   const li = $(`#playlist li[data-i="${index}"]`);
   if (!li) return;
   li.classList.add('on');
-  // scroll inside the list only, never the page
+  // open the folders it sits in
+  for (let f = li.parentElement.closest('.folder'); f; f = f.parentElement.closest('.folder')) {
+    f.firstElementChild.setAttribute('aria-expanded', true);
+  }
+  // scroll inside the list only, never the page (the list is the offsetParent)
   const box = $('#playlist');
-  const top = li.offsetTop - box.offsetTop;
+  const top = li.offsetTop;
   if (top < box.scrollTop || top + li.offsetHeight > box.scrollTop + box.clientHeight) {
     box.scrollTo({ top: top - box.clientHeight / 2 + li.offsetHeight / 2, behavior: 'smooth' });
   }
@@ -166,30 +182,51 @@ function buildPlaylist() {
   $('#plist').hidden = list.length < 2;
   if (list.length < 2) return;
 
-  const path = list[0].file?.webkitRelativePath || '';
-  $('#plistTitle').textContent = path.includes('/') ? path.split('/')[0] : 'Playlist';
+  // folders of each item; the opened folder itself is dropped, the header shows its name
+  const dirs = list.map((it) => pathOf(it.file || it).split('/').slice(0, -1));
+  const top = dirs[0][0];
+  const shared = top && dirs.every((d) => d[0] === top);
+  $('#plistTitle').textContent = shared ? top : 'Playlist';
   $('#plistCount').textContent = list.length;
   $('#plistSearch').value = '';
+  $('#playlist').classList.remove('searching');
 
-  const rows = [];
-  let dir = '';
+  // items arrive in tree order, so a stack of open folders is enough to nest them
+  const root = document.createElement('ol');
+  const open = [];
+  const folders = [];
   list.forEach((it, i) => {
-    if (it.dir && it.dir !== dir) {
-      const h = document.createElement('li');
-      h.className = 'group';
-      h.textContent = it.dir;
-      rows.push(h);
+    const path = dirs[i].slice(shared ? 1 : 0);
+    let k = 0;
+    while (k < open.length && k < path.length && open[k].name === path[k]) k++;
+    open.length = k;
+    for (; k < path.length; k++) {
+      const li = document.createElement('li');
+      li.className = 'folder';
+      li.innerHTML = `<button type="button" class="folder-row" aria-expanded="true">
+        <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.4 8.6 12 13.2l4.6-4.6L18 10l-6 6-6-6z"/></svg>
+        <svg class="ficon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>
+        <span class="fname"></span><span class="count"></span></button><ol class="children"></ol>`;
+      li.querySelector('.fname').textContent = path[k];
+      const row = li.firstElementChild;
+      row.onclick = () => row.setAttribute('aria-expanded', row.getAttribute('aria-expanded') !== 'true');
+      (open.at(-1)?.ol || root).append(li);
+      const f = { name: path[k], ol: li.lastElementChild, count: li.querySelector('.count'), n: 0 };
+      open.push(f);
+      folders.push(f);
     }
-    dir = it.dir;
+    open.forEach((f) => f.n++);
+
     const li = document.createElement('li');
     li.dataset.i = i;
     li.innerHTML = `<button type="button"><span class="thumb"><img alt="" hidden><span class="n">${i + 1}</span><span class="dur"></span></span>
       <span class="info"><span class="name"></span><span class="meta"></span></span></button>`;
     li.querySelector('.name').textContent = it.name.replace(/\.[^.]+$/, '');
     li.querySelector('button').onclick = () => play(i);
-    rows.push(li);
+    (open.at(-1)?.ol || root).append(li);
   });
-  $('#playlist').replaceChildren(...rows);
+  folders.forEach((f) => { f.count.textContent = f.n; });
+  $('#playlist').replaceChildren(...root.children);
   makeThumbs(list);
 }
 
@@ -289,8 +326,10 @@ $('#plistToggle').onclick = (e) => {
 
 $('#plistSearch').oninput = (e) => {
   const q = e.target.value.trim().toLowerCase();
-  for (const li of $('#playlist').children) {
-    li.hidden = q ? li.classList.contains('group') || !state.list[li.dataset.i].name.toLowerCase().includes(q) : false;
+  // while searching, folders flatten out and only matching files show
+  $('#playlist').classList.toggle('searching', !!q);
+  for (const li of $('#playlist').querySelectorAll('li[data-i]')) {
+    li.hidden = !!q && !state.list[li.dataset.i].name.toLowerCase().includes(q);
   }
 };
 
