@@ -546,8 +546,20 @@ movi-player {
 }
 
 .playlist .on button {
-  background: #fff;
-  box-shadow: inset 3px 0 0 var(--accent);
+  position: relative;
+  background: rgba(240, 106, 0, .08);
+}
+
+/* short rounded marker on the playing item */
+.playlist .on button::before {
+  content: "";
+  position: absolute;
+  top: 15%;
+  left: 0;
+  width: 3px;
+  height: 70%;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent);
 }
 
 .thumb {
@@ -573,7 +585,16 @@ movi-player {
   object-fit: cover;
 }
 
+/* faint orange layer with a play mark over the playing item's thumbnail */
+.on .thumb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(240, 106, 0, .35) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M7 4.5v15l12-7.5z'/%3E%3C/svg%3E") center / 18px no-repeat;
+}
+
 .dur:not(:empty) {
+  z-index: 1;
   position: absolute;
   right: 4px;
   bottom: 4px;
