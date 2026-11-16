@@ -337,6 +337,10 @@ $('#plistSearch').oninput = (e) => {
 // ---------- player events ----------
 
 customElements.whenDefined('movi-player').then(() => {
+  // the page has its own empty screen; the player's "Nothing to Play" only flashes before a file loads
+  const hideEmpty = document.createElement('style');
+  hideEmpty.textContent = '.movi-empty-state{display:none!important}';
+  player.shadowRoot?.append(hideEmpty);
   player.addControl({
     id: 'close',
     label: 'Close video',
