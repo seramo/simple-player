@@ -129,7 +129,8 @@ function preparing(text) {
 }
 
 function clearWhenReady(undo) {
-  const events = ['loadeddata', 'canplay', 'error'];
+  // playing / timeupdate too: the player can start before it sends loadeddata
+  const events = ['loadeddata', 'canplay', 'playing', 'timeupdate', 'error'];
   const finish = () => {
     clearTimeout(timer);
     events.forEach((t) => player.removeEventListener(t, finish));
@@ -337,13 +338,27 @@ $('#plistSearch').oninput = (e) => {
 
 customElements.whenDefined('movi-player').then(() => {
   player.addControl({
-    id: 'open',
-    label: 'Open files',
-    icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>',
+    id: 'close',
+    label: 'Close video',
+    icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg>',
     placement: 'top',
-    onSelect: () => $('#fileInput').click(),
+    onSelect: closeVideo,
   });
 });
+
+// back to the page as first loaded, so a new file, folder or link can be picked
+const startTitle = document.title;
+function closeVideo() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  setList([]);
+  player.src = null; // saves the resume point and shows nothing
+  $('#stage').classList.remove('on');
+  $('#bar').hidden = true;
+  $('#msg').hidden = true;
+  $('#loading').classList.remove('visible');
+  $('#urlInput').value = '';
+  document.title = startTitle;
+}
 
 // Next / Previous in the bar: the player only asks, we pick the item (shuffle, repeat) and load it
 player.addEventListener('itemchange', (e) => {
