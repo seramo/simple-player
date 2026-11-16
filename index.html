@@ -25,7 +25,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 
-<link rel="stylesheet" href="assets/css/style.min.css?v=1.0.7">
+<link rel="stylesheet" href="assets/css/style.min.css?v=1.0.8">
 <!-- start the player download right away without running it; the module at the end of body uses the same URL -->
 <link rel="modulepreload" href="assets/vendor/movi/movi-player.js?v=0.4.2" fetchpriority="high">
 
@@ -95,10 +95,11 @@
             <button type="submit">Play</button>
           </form>
         </div>
-        <movi-player id="player" renderer="mse" controls objectfit="control" playsinline thumb="precise" fastseek
+        <movi-player id="player" renderer="mse" fallback="native" controls objectfit="control" playsinline thumb="precise" fastseek
           showtitle subtitlepicker resume stablevolume smoothwarning sw="auto" theme="dark" themecolor="#f06a00 #f06a00"></movi-player>
         <div class="loading" id="loading" role="status" aria-live="polite"><span>Preparing your video</span></div>
         <div class="msg" id="msg" role="alert" hidden></div>
+        <button type="button" class="close" id="closeBtn" title="Close video" aria-label="Close video" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg></button>
       </div>
 
       <div class="bar" id="bar" hidden>
@@ -212,7 +213,7 @@
 <div class="drop" id="drop" aria-hidden="true"><span>Drop to play</span></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="assets/js/app.min.js?v=1.0.11" defer></script>
+<script src="assets/js/app.min.js?v=1.0.12" defer></script>
 <script type="module" src="assets/vendor/movi/movi-player.js?v=0.4.2"></script>
 </body>
 </html>

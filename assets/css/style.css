@@ -389,6 +389,33 @@ movi-player {
   font-size: 1.125rem;
 }
 
+/* shown when a video fails: the player's error screen covers its own close button */
+.close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10001;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .45);
+  color: #fff;
+}
+
+.close:hover {
+  background: var(--accent);
+}
+
+.close svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
 
 .private {
   margin: 18px 0 0;

@@ -98,6 +98,7 @@ async function play(i) {
   if (!item) return;
   state.index = i;
   $('#msg').hidden = true;
+  $('#closeBtn').hidden = true;
   $('#stage').classList.add('on');
   showCurrent();
 
@@ -359,6 +360,7 @@ function closeVideo() {
   $('#stage').classList.remove('on');
   $('#bar').hidden = true;
   $('#msg').hidden = true;
+  $('#closeBtn').hidden = true;
   $('#loading').classList.remove('visible');
   $('#urlInput').value = '';
   document.title = startTitle;
@@ -382,11 +384,16 @@ player.addEventListener('loopchange', () => {
   if (player.loop !== (state.repeat === 'one')) setRepeat(player.loop ? 'one' : 'off');
 });
 
-player.addEventListener('error', () => { if (current()) showError(); });
+player.addEventListener('error', () => {
+  if (!current()) return;
+  $('#closeBtn').hidden = false;
+  showError();
+});
 
 // ---------- page inputs ----------
 
 $('#openBtn').onclick = () => $('#fileInput').click();
+$('#closeBtn').onclick = closeVideo;
 $('#folderBtn').onclick = () => $('#folderInput').click();
 $('#urlForm').onsubmit = (e) => { e.preventDefault(); openUrl($('#urlInput').value); };
 
