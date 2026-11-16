@@ -121,6 +121,18 @@ h2 {
   color: var(--ink);
 }
 
+.top nav a.gh {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px;
+}
+
+.top nav a.gh svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
 .logo {
   display: inline-flex;
   align-items: center;
@@ -997,5 +1009,12 @@ body.dragging .drop {
 
   .loading::after {
     animation: none;
+  }
+}
+
+/* no room for every link next to the logo on small phones */
+@media (max-width: 420px) {
+  .top nav .nav-fmt {
+    display: none;
   }
 }
