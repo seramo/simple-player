@@ -4,8 +4,30 @@ const VIDEO_EXT = /\.(mp4|m4v|webm|mkv|mov|ogv|ogg|avi|3gp|ts|mts|m2ts|mpe?g|wmv
 const SUB_EXT = /\.(srt|vtt|ass|ssa)$/i;
 
 const $ = (s) => document.querySelector(s);
-// <movi-player>: preloaded in <head>, defined by the module script after this one in index.html
 const player = $('#player');
+const MOVI_MODULE = '../vendor/movi/movi-player.js?v=0.4.2';
+let moviPromise;
+let moviRetries = 0;
+
+function loadMovi() {
+  if (!moviPromise) {
+    // Browsers can cache a failed module fetch for the document. Use a fresh URL on retry.
+    const url = moviRetries ? MOVI_MODULE + '&retry=' + moviRetries : MOVI_MODULE;
+    moviPromise = import(url).then((Movi) => {
+      setupPlayer();
+      return Movi;
+    }, (error) => {
+      moviRetries++;
+      moviPromise = undefined;
+      throw error;
+    });
+  }
+  return moviPromise;
+}
+
+function warmUpPlayer() {
+  loadMovi().catch(() => {}); // Playback will retry and show any error to the user.
+}
 
 const state = {
   list: [],
@@ -53,12 +75,14 @@ function setList(items) {
   state.list.forEach((it) => it.thumb && URL.revokeObjectURL(it.thumb));
   state.list = items;
   buildPlaylist();
-  // the player draws Next / Previous and owns Shift+N / Shift+P; we load each item ourselves.
-  // Waits for the element: a property set before it upgrades would hide its setter.
-  customElements.whenDefined('movi-player').then(() => {
-    player.playlist = items.length > 1 ? items.map((it) => ({ title: it.name })) : [];
-  });
+  if (customElements.get('movi-player')) setPlayerPlaylist();
   play(0);
+}
+
+function setPlayerPlaylist() {
+  // The player draws Next / Previous and owns Shift+N / Shift+P.
+  const { list } = state;
+  player.playlist = list.length > 1 ? list.map((it) => ({ title: it.name })) : [];
 }
 
 function openFiles(files) {
@@ -102,13 +126,22 @@ async function play(i) {
   $('#stage').classList.add('on');
   showCurrent();
 
-  // the player bundle may still be downloading if the file was picked right away
   const ready = !!customElements.get('movi-player');
   const undo = preparing(ready ? 'Opening your video' : 'Loading the player');
   // no await when ready: play() must stay inside the click, or the browser blocks autoplay
   if (!ready) {
-    await customElements.whenDefined('movi-player');
-    if (current() !== item) return undo();
+    try {
+      await loadMovi();
+    } catch {
+      if (current() !== item) return;
+      undo();
+      $('#msg').innerHTML = "<p><b>The player couldn't load.</b>Close this video and try again.</p>";
+      $('#msg').hidden = false;
+      $('#closeBtn').hidden = false;
+      return;
+    }
+    if (current() !== item) return;
+    setPlayerPlaylist();
   }
 
   if (item.file) player.setFile ? player.setFile(item.file) : (player.src = item.file);
@@ -149,7 +182,7 @@ function showError() {
 
 function addSub(file) {
   current().subs.push(file);
-  player.addSubtitleFile(file);
+  if (customElements.get('movi-player')) player.addSubtitleFile(file);
   toast('Subtitles added: ' + baseName(file.name));
 }
 
@@ -250,7 +283,7 @@ let thumbWasm;
 async function makeThumbs(list) {
   let Movi;
   try {
-    Movi = await import($('script[type="module"]').src);
+    Movi = await loadMovi();
     thumbWasm ??= Movi.loadWasmModuleNew();
     await thumbWasm;
   } catch { return; }
@@ -337,7 +370,7 @@ $('#plistSearch').oninput = (e) => {
 
 // ---------- player events ----------
 
-customElements.whenDefined('movi-player').then(() => {
+function setupPlayer() {
   // the page has its own empty screen; the player's "Nothing to Play" only flashes before a file loads
   const hideEmpty = document.createElement('style');
   hideEmpty.textContent = '.movi-empty-state{display:none!important}';
@@ -349,14 +382,14 @@ customElements.whenDefined('movi-player').then(() => {
     placement: 'top',
     onSelect: closeVideo,
   });
-});
+}
 
 // back to the page as first loaded, so a new file, folder or link can be picked
 const startTitle = document.title;
 function closeVideo() {
   if (document.fullscreenElement) document.exitFullscreen();
   setList([]);
-  player.src = null; // saves the resume point and shows nothing
+  if (customElements.get('movi-player')) player.src = null; // saves the resume point
   $('#stage').classList.remove('on');
   $('#bar').hidden = true;
   $('#msg').hidden = true;
@@ -392,9 +425,15 @@ player.addEventListener('error', () => {
 
 // ---------- page inputs ----------
 
-$('#openBtn').onclick = () => $('#fileInput').click();
+function pickFiles(input) {
+  $(input).click();
+  warmUpPlayer();
+}
+
+$('#openBtn').onclick = () => pickFiles('#fileInput');
 $('#closeBtn').onclick = closeVideo;
-$('#folderBtn').onclick = () => $('#folderInput').click();
+$('#folderBtn').onclick = () => pickFiles('#folderInput');
+$('#urlInput').addEventListener('focus', warmUpPlayer);
 $('#urlForm').onsubmit = (e) => { e.preventDefault(); openUrl($('#urlInput').value); };
 
 for (const id of ['#fileInput', '#folderInput']) {
@@ -407,6 +446,7 @@ const endDrag = () => { dragDepth = 0; document.body.classList.remove('dragging'
 
 addEventListener('dragenter', (e) => {
   if (![...e.dataTransfer.types].includes('Files')) return;
+  if (!dragDepth) warmUpPlayer();
   dragDepth++;
   document.body.classList.add('dragging');
 });
@@ -450,5 +490,5 @@ addEventListener('paste', (e) => {
 // every other shortcut belongs to the player (press ? on it to see them)
 addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target)) return;
-  if (e.key.toLowerCase() === 'o') $('#fileInput').click();
+  if (e.key.toLowerCase() === 'o') pickFiles('#fileInput');
 });
