@@ -436,6 +436,21 @@ $('#folderBtn').onclick = () => pickFiles('#folderInput');
 $('#urlInput').addEventListener('focus', warmUpPlayer);
 $('#urlForm').onsubmit = (e) => { e.preventDefault(); openUrl($('#urlInput').value); };
 
+const firstInteraction = new AbortController();
+function warmUpOnInteraction(event) {
+  if (!event.isTrusted) return;
+  firstInteraction.abort();
+  warmUpPlayer();
+}
+
+for (const type of ['pointermove', 'pointerdown', 'touchstart', 'wheel', 'keydown']) {
+  addEventListener(type, warmUpOnInteraction, {
+    capture: true,
+    passive: true,
+    signal: firstInteraction.signal,
+  });
+}
+
 for (const id of ['#fileInput', '#folderInput']) {
   $(id).onchange = (e) => { openFiles(e.target.files); e.target.value = ''; };
 }
