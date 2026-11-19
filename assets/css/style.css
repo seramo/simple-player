@@ -150,6 +150,7 @@ h2 {
 }
 
 .logo b {
+  margin-inline-start: .15em;
   font-weight: 700;
   color: var(--accent);
 }
@@ -1043,5 +1044,12 @@ body.dragging .drop {
 @media (max-width: 420px) {
   .top nav .nav-fmt {
     display: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .top nav a,
+  .top nav a.gh {
+    padding-inline: 4px;
   }
 }
